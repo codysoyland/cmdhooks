@@ -1,0 +1,208 @@
+# golangci-lint configuration for CmdHooks
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+  allow-parallel-runners: true
+
+linters:
+  # Disable all linters except the ones we explicitly enable
+  disable-all: true
+  
+  enable:
+    # Default linters
+    - errcheck       # Check for unchecked errors
+    - gosimple      # Simplify Go code
+    - govet         # Go vet analysis
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Various static analysis checks
+    - typecheck     # Type checking
+    - unused        # Find unused code
+    
+    # Additional useful linters
+    - gofmt         # Check if code is gofmt-ed
+    - goimports     # Check import formatting
+    - misspell      # Find commonly misspelled words
+    - gocritic      # Go source code linter
+    - gocyclo       # Cyclomatic complexity
+    - copyloopvar   # Check for pointers to enclosing loop variables
+    - nolintlint    # Report ill-formed or insufficient nolint directives
+    - gosec         # Security-focused linter
+    - bodyclose     # Check whether HTTP response body is closed successfully
+    - rowserrcheck  # Check whether Err of rows is checked successfully
+    - sqlclosecheck # Check that sql.Rows and sql.Stmt are closed
+
+linters-settings:
+  errcheck:
+    # Report about not checking of errors in type assertions
+    check-type-assertions: true
+    # Report about assignment of errors to blank identifier
+    check-blank: false
+    # List of functions to exclude from checking
+    exclude-functions:
+      - (*bufio.Writer).Flush
+      - (*os.File).Close
+
+  govet:
+    # Enable all analyzers
+    enable-all: true
+    disable:
+      - fieldalignment  # Too strict for this project
+
+  gocyclo:
+    # Minimal code complexity to report
+    min-complexity: 15
+
+  misspell:
+    # Correct spellings using locale preferences for US or UK
+    locale: US
+
+  goimports:
+    # Put imports beginning with prefix after 3rd-party packages
+    local-prefixes: github.com/codysoyland/cmdhooks
+
+  gocritic:
+    # Which checks should be enabled
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    disabled-checks:
+      - commentedOutCode
+      - whyNoLint
+      - unnamedResult  # Too noisy for this project
+      - hugeParam      # Request structs are part of API
+      - nestingReduce  # Readability vs performance tradeoff
+
+  gosec:
+    # To select a subset of rules to run
+    includes:
+      - G101 # Look for hard coded credentials
+      - G102 # Bind to all interfaces
+      - G103 # Audit the use of unsafe block
+      - G104 # Audit errors not checked
+      - G106 # Audit the use of ssh.InsecureIgnoreHostKey
+      - G107 # Url provided to HTTP request as taint input
+      - G108 # Profiling endpoint automatically exposed on /debug/pprof
+      - G109 # Potential Integer overflow made by strconv.Atoi result conversion to int16/32
+      - G110 # Potential DoS vulnerability via decompression bomb
+      - G201 # SQL query construction using format string
+      - G202 # SQL query construction using string concatenation
+      - G203 # Use of unescaped data in HTML templates
+      - G301 # Poor file permissions used when creating a directory
+      - G302 # Poor file permissions used with chmod
+      - G303 # Creating tempfile using a predictable path
+      - G304 # File path provided as taint input
+      - G305 # File traversal when extracting zip/tar archive
+      - G306 # Poor file permissions used when writing to a new file
+      - G307 # Poor file permissions used when creating a file with os.Create
+      - G401 # Detect the usage of DES, RC4, MD5 or SHA1
+      - G402 # Look for bad TLS connection settings
+      - G403 # Ensure minimum RSA key length of 2048 bits
+      - G404 # Insecure random number source (rand)
+      - G501 # Import blocklist: crypto/md5
+      - G502 # Import blocklist: crypto/des
+      - G503 # Import blocklist: crypto/rc4
+      - G504 # Import blocklist: net/http/cgi
+      - G505 # Import blocklist: crypto/sha1
+      - G601 # Implicit memory aliasing of items from a range statement
+
+issues:
+  # Use default exclude dirs
+  exclude-dirs-use-default: true
+  
+  # List of regexps of issue texts to exclude
+  exclude:
+    # Exclude common false positives
+    - "Error return value of .((os\\.)?std(out|err)\\..*|.*Close|.*Flush|os\\.Remove(All)?|.*print(f|ln)?|os\\.(Un)?Setenv). is not checked"
+    - "should have( a package)? comment"
+    - "should not use dot imports"
+
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    # Exclude known linters from partially hard-to-fix issues
+    - path: _test\.go
+      linters:
+        - gosec
+        - gocritic
+        - errcheck
+
+    # Exclude some staticcheck messages
+    - linters:
+        - staticcheck
+      text: "SA9003:"  # Empty branch
+
+    # Exclude gosec for expected command execution in executor
+    - path: internal/executor/
+      linters:
+        - gosec
+      text: "G204:"  # Subprocess launched
+
+    # Exclude shadow warnings in main functions (common pattern)
+    - path: cmd/root\.go
+      linters:
+        - govet
+      text: "shadow:"
+
+    # Exclude misspell for 'cancelled' vs 'canceled' (both are valid)
+    - linters:
+        - misspell
+      text: "`cancelled` is a misspelling of `canceled`"
+
+    # Exclude gocritic octal literal warnings (cosmetic)
+    - linters:
+        - gocritic
+      text: "octalLiteral:"
+
+    # Exclude unused write warnings for test structs
+    - path: _test\.go
+      linters:
+        - govet
+      text: "unusedwrite:"
+
+    # Exclude shadow warnings in tests (common pattern)
+    - path: _test\.go
+      linters:
+        - govet
+      text: "shadow:"
+
+    # Exclude specific errcheck for file.Sync() in logger (not critical)
+    - path: internal/logger/
+      linters:
+        - errcheck
+      text: "Error return value of.*Sync.*is not checked"
+
+    # Exclude high cyclomatic complexity for factory functions (acceptable)
+    - path: internal/hook/factory\.go
+      linters:
+        - gocyclo
+      text: "cyclomatic complexity.*is high"
+
+  # Maximum issues count per one linter
+  max-issues-per-linter: 0
+
+  # Maximum count of issues with the same text
+  max-same-issues: 0
+
+  # Show only new issues created after git revision `REV`
+  new: false
+
+  # Fix found issues (if it's supported by the linter)
+  fix: false
+
+  # Make issues output unique by line
+  uniq-by-line: true
+
+# Output configuration
+output:
+  # Format of output: colored-line-number|line-number|json|tab|checkstyle|code-climate|html|junit-xml|github-actions|teamcity
+  formats:
+    - format: colored-line-number
+  # Print lines of code with issue
+  print-issued-lines: true
+  # Print linter name in the end of issue text
+  print-linter-name: true
+  # Sort results by: filepath, line and column
+  sort-results: true
