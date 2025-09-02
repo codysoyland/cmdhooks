@@ -60,6 +60,11 @@ func Run(cmd []string, opts ...WrapperOption) error {
 		opts = append(opts, WithSocketPath(socketPath))
 	}
 
+	// Auto-detect verbose mode from environment
+	if v := strings.TrimSpace(os.Getenv("CMDHOOKS_VERBOSE")); v != "" && strings.ToLower(v) != "false" && v != "0" {
+		opts = append(opts, WithVerbose(true))
+	}
+
 	// Use nil hook - wrapper will rely on socket-based IPC
 	w := NewWrapperCommand(nil, opts...)
 	return w.Run(cmd)
