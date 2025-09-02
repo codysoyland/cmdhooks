@@ -1,21 +1,27 @@
 package wrapper
 
 import (
-	"bufio"
-	"context"
-	"encoding/json"
-	"fmt"
-	"io"
-	"log"
-	"maps"
-	"net"
-	"os"
-	"os/exec"
-	"strings"
-	"sync"
-	"time"
+    "bufio"
+    "context"
+    "encoding/json"
+    "fmt"
+    "io"
+    "log"
+    "maps"
+    "net"
+    "os"
+    "os/exec"
+    "strings"
+    "sync"
+    "time"
 
 	"github.com/codysoyland/cmdhooks/pkg/hook"
+)
+
+const (
+    // MaxIPCMessageBytes caps IPC messages to prevent unbounded memory usage.
+    // Responses exceeding this size are treated as an error.
+    MaxIPCMessageBytes = 64 * 1024 // 64 KiB
 )
 
 // pathMutex protects PATH environment variable manipulation to prevent race conditions
@@ -440,11 +446,11 @@ func (w *WrapperCommand) getCleanEnvironment(cleanPath string) []string {
 
 // runHook sends a request to the IPC socket and returns the hook response
 func runHook(socketPath string, req hook.Request) (*hook.Response, error) {
-	conn, err := net.Dial("unix", socketPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to socket: %w", err)
-	}
-	defer conn.Close()
+    conn, err := net.Dial("unix", socketPath)
+    if err != nil {
+        return nil, fmt.Errorf("failed to connect to socket: %w", err)
+    }
+    defer conn.Close()
 
 	// Send request
 	data, err := json.Marshal(req)
@@ -455,14 +461,15 @@ func runHook(socketPath string, req hook.Request) (*hook.Response, error) {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
 
-	// Read response
-	scanner := bufio.NewScanner(conn)
-	if !scanner.Scan() {
-		if err := scanner.Err(); err != nil {
-			return nil, fmt.Errorf("failed to read response: %w", err)
-		}
-		return nil, fmt.Errorf("no response from socket")
-	}
+    // Read response with a bounded scanner
+    scanner := bufio.NewScanner(conn)
+    scanner.Buffer(make([]byte, 0, 64*1024), MaxIPCMessageBytes)
+    if !scanner.Scan() {
+        if err := scanner.Err(); err != nil {
+            return nil, fmt.Errorf("failed to read response: %w", err)
+        }
+        return nil, fmt.Errorf("no response from socket")
+    }
 
 	var resp hook.Response
 	if err := json.Unmarshal(scanner.Bytes(), &resp); err != nil {

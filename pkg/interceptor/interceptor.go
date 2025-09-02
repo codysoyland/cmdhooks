@@ -16,6 +16,13 @@ import (
 	"github.com/codysoyland/cmdhooks/pkg/hook"
 )
 
+const (
+    // MaxIPCMessageBytes is the maximum size allowed for a single IPC message
+    // to guard against unbounded memory usage. Requests exceeding this size
+    // are rejected with an error.
+    MaxIPCMessageBytes = 64 * 1024 // 64 KiB
+)
+
 // Interceptor handles IPC communication and request evaluation
 type Interceptor struct {
 	socketPath string
@@ -131,11 +138,13 @@ func (i *Interceptor) listen() {
 
 // handleConnection processes a single IPC connection
 func (i *Interceptor) handleConnection(conn net.Conn) {
-	defer i.wg.Done()
-	defer conn.Close()
+    defer i.wg.Done()
+    defer conn.Close()
 
-	scanner := bufio.NewScanner(conn)
-	writer := bufio.NewWriter(conn)
+    scanner := bufio.NewScanner(conn)
+    // Guard against overly large IPC messages
+    scanner.Buffer(make([]byte, 0, 64*1024), MaxIPCMessageBytes)
+    writer := bufio.NewWriter(conn)
 
 	// Read and parse request
 	req, err := readRequest(scanner)
@@ -181,9 +190,9 @@ func (i *Interceptor) handleConnection(conn net.Conn) {
 
 // readRequest reads and unmarshals a JSON request from the scanner
 func readRequest(scanner *bufio.Scanner) (*hook.Request, error) {
-	if !scanner.Scan() {
-		return nil, fmt.Errorf("failed to read request: %v", scanner.Err())
-	}
+    if !scanner.Scan() {
+        return nil, fmt.Errorf("failed to read request: %v", scanner.Err())
+    }
 	var req hook.Request
 	if err := json.Unmarshal(scanner.Bytes(), &req); err != nil {
 		return nil, fmt.Errorf("failed to parse request: %v", err)
