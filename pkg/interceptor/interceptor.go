@@ -17,10 +17,10 @@ import (
 )
 
 const (
-    // MaxIPCMessageBytes is the maximum size allowed for a single IPC message
-    // to guard against unbounded memory usage. Requests exceeding this size
-    // are rejected with an error.
-    MaxIPCMessageBytes = 64 * 1024 // 64 KiB
+	// MaxIPCMessageBytes is the maximum size allowed for a single IPC message
+	// to guard against unbounded memory usage. Requests exceeding this size
+	// are rejected with an error.
+	MaxIPCMessageBytes = 64 * 1024 // 64 KiB
 )
 
 // Interceptor handles IPC communication and request evaluation
@@ -138,13 +138,13 @@ func (i *Interceptor) listen() {
 
 // handleConnection processes a single IPC connection
 func (i *Interceptor) handleConnection(conn net.Conn) {
-    defer i.wg.Done()
-    defer conn.Close()
+	defer i.wg.Done()
+	defer conn.Close()
 
-    scanner := bufio.NewScanner(conn)
-    // Guard against overly large IPC messages
-    scanner.Buffer(make([]byte, 0, 64*1024), MaxIPCMessageBytes)
-    writer := bufio.NewWriter(conn)
+	scanner := bufio.NewScanner(conn)
+	// Guard against overly large IPC messages
+	scanner.Buffer(make([]byte, 0, 64*1024), MaxIPCMessageBytes)
+	writer := bufio.NewWriter(conn)
 
 	// Read and parse request
 	req, err := readRequest(scanner)
@@ -190,9 +190,9 @@ func (i *Interceptor) handleConnection(conn net.Conn) {
 
 // readRequest reads and unmarshals a JSON request from the scanner
 func readRequest(scanner *bufio.Scanner) (*hook.Request, error) {
-    if !scanner.Scan() {
-        return nil, fmt.Errorf("failed to read request: %v", scanner.Err())
-    }
+	if !scanner.Scan() {
+		return nil, fmt.Errorf("failed to read request: %v", scanner.Err())
+	}
 	var req hook.Request
 	if err := json.Unmarshal(scanner.Bytes(), &req); err != nil {
 		return nil, fmt.Errorf("failed to parse request: %v", err)
@@ -230,22 +230,22 @@ func (i *Interceptor) processRequest(req *hook.Request) (*hook.Response, error) 
 	var err error
 
 	// Check if hook implements IPCHook
-    switch h := i.hook.(type) {
-    case hook.IPCHook:
-        response, err = h.EvaluateIPC(ctx, hookRequest)
-        if err != nil {
-            response = &hook.Response{
-                Exit: true,
-            }
-        }
-    default:
-        // For hooks that do not implement IPCHook, default to allow.
-        // This ensures LocalHook-only setups are not blocked by IPC stage.
-        if i.verbose {
-            log.Printf("Non-IPCHook provided; default-allowing request: %v", req.Command)
-        }
-        response = &hook.Response{Exit: false}
-    }
+	switch h := i.hook.(type) {
+	case hook.IPCHook:
+		response, err = h.EvaluateIPC(ctx, hookRequest)
+		if err != nil {
+			response = &hook.Response{
+				Exit: true,
+			}
+		}
+	default:
+		// For hooks that do not implement IPCHook, default to allow.
+		// This ensures LocalHook-only setups are not blocked by IPC stage.
+		if i.verbose {
+			log.Printf("Non-IPCHook provided; default-allowing request: %v", req.Command)
+		}
+		response = &hook.Response{Exit: false}
+	}
 
 	resp := &hook.Response{
 		Exit: response.Exit,

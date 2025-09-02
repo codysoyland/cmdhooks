@@ -293,3 +293,4 @@ The evaluation follows this priority:
 - Use functional options pattern for configuration
 - Examples should be created in `examples/` directory
 - Library code must be in `pkg/` directory
+- Indentation must use tabs

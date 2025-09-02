@@ -347,20 +347,20 @@ func TestProcessRequest(t *testing.T) {
 			wantExit:  true,
 			wantError: false,
 		},
-        {
-            name: "non-IPC hook defaults to allow",
-            hook: &mockBasicHook{
-                name:     "basic-hook",
-                commands: []string{"curl"},
-            },
-            request: &hook.Request{
-                Command: []string{"curl", "https://example.com"},
-                PID:     123,
-                Hook:    hook.HookPreRun,
-            },
-            wantExit:  false,
-            wantError: false,
-        },
+		{
+			name: "non-IPC hook defaults to allow",
+			hook: &mockBasicHook{
+				name:     "basic-hook",
+				commands: []string{"curl"},
+			},
+			request: &hook.Request{
+				Command: []string{"curl", "https://example.com"},
+				PID:     123,
+				Hook:    hook.HookPreRun,
+			},
+			wantExit:  false,
+			wantError: false,
+		},
 	}
 
 	for _, tt := range tests {

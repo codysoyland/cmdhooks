@@ -3,13 +3,13 @@
 package cmdhooks
 
 import (
-    "fmt"
-    "log"
-    "os"
-    "os/exec"
-    "path/filepath"
-    "strings"
-    "time"
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/codysoyland/cmdhooks/pkg/executor"
 	"github.com/codysoyland/cmdhooks/pkg/hook"
@@ -168,18 +168,18 @@ func (c *CmdHooks) createWrappers() (string, func(), error) {
 		return tmpDir, cleanup, nil
 	}
 
-    // Create wrapper script for each command
-    for _, command := range commands {
-        wrapperPath := filepath.Join(tmpDir, command)
-        // Build exec command with safe shell quoting: wrapperCmd + command + "$@"
-        quotedWrapper := make([]string, 0, len(wrapperCmd))
-        for _, part := range wrapperCmd {
-            quotedWrapper = append(quotedWrapper, shellQuote(part))
-        }
-        quotedCommand := shellQuote(command)
-        wrapperExec := strings.Join(append(quotedWrapper, quotedCommand), " ") + " \"$@\""
+	// Create wrapper script for each command
+	for _, command := range commands {
+		wrapperPath := filepath.Join(tmpDir, command)
+		// Build exec command with safe shell quoting: wrapperCmd + command + "$@"
+		quotedWrapper := make([]string, 0, len(wrapperCmd))
+		for _, part := range wrapperCmd {
+			quotedWrapper = append(quotedWrapper, shellQuote(part))
+		}
+		quotedCommand := shellQuote(command)
+		wrapperExec := strings.Join(append(quotedWrapper, quotedCommand), " ") + " \"$@\""
 
-        wrapperScript := fmt.Sprintf(`#!/usr/bin/env bash
+		wrapperScript := fmt.Sprintf(`#!/usr/bin/env bash
 # CmdHooks wrapper for %s (defaults to 'cmdhooks run', configurable via WithWrapperPath)
 exec %s
 `, command, wrapperExec)
@@ -201,14 +201,14 @@ exec %s
 
 // shellQuote returns a shell-safe single-quoted string. It wraps the input in single
 // quotes and escapes existing single quotes using the POSIX-safe pattern: '
-// becomes '\'' inside the quoted string.
+// becomes '\” inside the quoted string.
 func shellQuote(s string) string {
-    if s == "" {
-        return "''"
-    }
-    // Replace every single quote ' with '\''
-    // This closes the existing quote, inserts an escaped single quote, and reopens the quote.
-    return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
+	if s == "" {
+		return "''"
+	}
+	// Replace every single quote ' with '\''
+	// This closes the existing quote, inserts an escaped single quote, and reopens the quote.
+	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
 }
 
 // setupExecutor prepares the execution environment
