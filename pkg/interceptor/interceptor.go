@@ -221,19 +221,22 @@ func (i *Interceptor) processRequest(req *hook.Request) (*hook.Response, error) 
 	var err error
 
 	// Check if hook implements IPCHook
-	switch h := i.hook.(type) {
-	case hook.IPCHook:
-		response, err = h.EvaluateIPC(ctx, hookRequest)
-		if err != nil {
-			response = &hook.Response{
-				Exit: true,
-			}
-		}
-	default:
-		response = &hook.Response{
-			Exit: true,
-		}
-	}
+    switch h := i.hook.(type) {
+    case hook.IPCHook:
+        response, err = h.EvaluateIPC(ctx, hookRequest)
+        if err != nil {
+            response = &hook.Response{
+                Exit: true,
+            }
+        }
+    default:
+        // For hooks that do not implement IPCHook, default to allow.
+        // This ensures LocalHook-only setups are not blocked by IPC stage.
+        if i.verbose {
+            log.Printf("Non-IPCHook provided; default-allowing request: %v", req.Command)
+        }
+        response = &hook.Response{Exit: false}
+    }
 
 	resp := &hook.Response{
 		Exit: response.Exit,
