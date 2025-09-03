@@ -69,10 +69,9 @@ func New(opts ...Option) (*CmdHooks, error) {
 		_ = os.Remove(path)
 		config.SocketPath = path
 	}
-	i := interceptor.New(config.SocketPath, config.Verbose, config.Hook)
-	if config.InterceptorTimeout > 0 {
-		i.SetEvaluateTimeout(config.InterceptorTimeout)
-	}
+    i := interceptor.New(config.SocketPath, config.Verbose, config.Hook)
+    // Apply timeout as provided; zero/negative means no timeout.
+    i.SetEvaluateTimeout(config.InterceptorTimeout)
 
 	return &CmdHooks{
 		config:      config,

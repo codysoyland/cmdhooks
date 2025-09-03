@@ -25,9 +25,9 @@ type Config struct {
 	// ["go", "run", "./cmd/cmdhooks"]. Must be non-empty.
 	WrapperPath []string
 	Hook        hook.Hook
-	// InterceptorTimeout bounds IPC evaluation inside the interceptor process.
-	// Defaults to 10m if zero.
-	InterceptorTimeout time.Duration
+    // InterceptorTimeout bounds IPC evaluation inside the interceptor process.
+    // If zero or negative, no timeout is applied (default behavior).
+    InterceptorTimeout time.Duration
 }
 
 // Option represents a functional option for configuration

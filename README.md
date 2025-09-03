@@ -160,7 +160,7 @@ func main() {
     ch, err := cmdhooks.New(
         cmdhooks.WithHook(&MyHook{}),
         cmdhooks.WithVerbose(true),
-        // Optional: tune IPC evaluation timeout
+        // Optional: tune IPC evaluation timeout (0 disables timeout; default is no timeout)
         cmdhooks.WithInterceptorTimeout(30*time.Second),
     )
     if err != nil {
@@ -178,7 +178,7 @@ func main() {
 ### Configurable Timeouts
 
 - Library option:
-  - `cmdhooks.WithInterceptorTimeout(d time.Duration)`: bounds IPC evaluation inside the interceptor (default 10m).
+  - `cmdhooks.WithInterceptorTimeout(d time.Duration)`: bounds IPC evaluation inside the interceptor. Use `0` (or a negative value) for no timeout. Default is no timeout.
 ```
 
 ## Development

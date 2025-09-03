@@ -32,9 +32,9 @@ type Interceptor struct {
 	stop       chan struct{}
 	exitSignal chan struct{} // Channel to signal process tree termination
 	wg         sync.WaitGroup
-	// evaluateTimeout bounds hook evaluations inside the interceptor.
-	// Defaults to 10m if zero.
-	evaluateTimeout time.Duration
+    // evaluateTimeout bounds hook evaluations inside the interceptor.
+    // If zero or negative, no timeout is applied.
+    evaluateTimeout time.Duration
 }
 
 // New creates a new interceptor instance
@@ -43,14 +43,15 @@ func New(socketPath string, verbose bool, h hook.Hook) *Interceptor {
 	// when no IPCHook is provided (including nil). cmdhooks.New enforces
 	// non-nil hooks for library entrypoints, but keeping this robust avoids
 	// surprising panics when interceptor is used directly in tests/tools.
-	return &Interceptor{
-		socketPath:      socketPath,
-		verbose:         verbose,
-		hook:            h,
-		stop:            make(chan struct{}),
-		exitSignal:      make(chan struct{}),
-		evaluateTimeout: 10 * time.Minute,
-	}
+    return &Interceptor{
+        socketPath:      socketPath,
+        verbose:         verbose,
+        hook:            h,
+        stop:            make(chan struct{}),
+        exitSignal:      make(chan struct{}),
+        // Default to no timeout; callers may configure if desired.
+        evaluateTimeout: 0,
+    }
 }
 
 // ExitSignal returns a channel that will receive a signal when exit is requested
@@ -111,9 +112,8 @@ func (i *Interceptor) Hook() hook.Hook {
 
 // SetEvaluateTimeout overrides the default evaluation timeout.
 func (i *Interceptor) SetEvaluateTimeout(d time.Duration) {
-	if d > 0 {
-		i.evaluateTimeout = d
-	}
+    // Allow zero/negative to disable timeouts explicitly.
+    i.evaluateTimeout = d
 }
 
 // listen accepts and handles incoming connections
@@ -233,12 +233,17 @@ func (i *Interceptor) processRequest(req *hook.Request) (*hook.Response, error) 
 		Metadata: req.Metadata,
 	}
 
-	timeout := i.evaluateTimeout
-	if timeout <= 0 {
-		timeout = 10 * time.Minute
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
+    var (
+        ctx    context.Context
+        cancel context.CancelFunc = func() {}
+    )
+    if i.evaluateTimeout > 0 {
+        ctx, cancel = context.WithTimeout(context.Background(), i.evaluateTimeout)
+    } else {
+        // No timeout requested; use background context.
+        ctx = context.Background()
+    }
+    defer cancel()
 
 	var response *hook.Response
 	var err error
