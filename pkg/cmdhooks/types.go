@@ -17,8 +17,12 @@ type CmdHooks struct {
 
 // Config holds all configuration options
 type Config struct {
-	Verbose     bool
-	SocketPath  string
+	Verbose    bool
+	SocketPath string
+	// WrapperPath defines the executable and arguments used by generated
+	// wrappers to invoke the real command handler. Provide binary and
+	// subcommand/args, for example: ["cmdhooks", "run"] or
+	// ["go", "run", "./cmd/cmdhooks"]. Must be non-empty.
 	WrapperPath []string
 	Hook        hook.Hook
 	// InterceptorTimeout bounds IPC evaluation inside the interceptor process.

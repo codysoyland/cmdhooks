@@ -120,6 +120,18 @@ func TestNew(t *testing.T) {
 			},
 			expectError: false,
 		},
+		{
+			name:        "WithWrapperPath empty should error",
+			options:     []Option{WithHook(newMockHook("test", []string{"curl"})), WithWrapperPath([]string{})},
+			expectError: true,
+			errorMsg:    "WithWrapperPath: wrapper command cannot be empty",
+		},
+		{
+			name:        "WithWrapperPath contains empty arg should error",
+			options:     []Option{WithHook(newMockHook("test", []string{"curl"})), WithWrapperPath([]string{"", "run"})},
+			expectError: true,
+			errorMsg:    "WithWrapperPath: argument 0 is empty",
+		},
 	}
 
 	for _, tt := range tests {
@@ -190,6 +202,22 @@ func TestOptions(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, wrapperPath, config.WrapperPath)
+	})
+
+	t.Run("WithWrapperPath empty errors", func(t *testing.T) {
+		config := &Config{}
+		option := WithWrapperPath([]string{})
+		err := option(config)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "wrapper command cannot be empty")
+	})
+
+	t.Run("WithWrapperPath empty element errors", func(t *testing.T) {
+		config := &Config{}
+		option := WithWrapperPath([]string{"", "run"})
+		err := option(config)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "argument 0 is empty")
 	})
 
 }

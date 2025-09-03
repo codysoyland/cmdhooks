@@ -417,19 +417,22 @@ func (w *WrapperCommand) outputResults(stdoutFile, stderrFile string, exitCode i
 }
 
 // getCleanPath returns PATH without the cmdhooks wrapper directory
+// Uses exact match via CMDHOOKS_WRAPPER_DIR to avoid false positives.
 func (w *WrapperCommand) getCleanPath() string {
-	currentPath := os.Getenv("PATH")
-	pathDirs := strings.Split(currentPath, string(os.PathListSeparator))
+    currentPath := os.Getenv("PATH")
+    wrapperDir := os.Getenv("CMDHOOKS_WRAPPER_DIR")
+    pathDirs := strings.Split(currentPath, string(os.PathListSeparator))
 
-	var cleanDirs []string
-	for _, dir := range pathDirs {
-		// Skip directories that contain our wrappers
-		if !strings.Contains(dir, "cmdhooks-wrappers") {
-			cleanDirs = append(cleanDirs, dir)
-		}
-	}
+    var cleanDirs []string
+    for _, dir := range pathDirs {
+        // Remove only the exact wrapper directory that was injected
+        if wrapperDir != "" && dir == wrapperDir {
+            continue
+        }
+        cleanDirs = append(cleanDirs, dir)
+    }
 
-	return strings.Join(cleanDirs, string(os.PathListSeparator))
+    return strings.Join(cleanDirs, string(os.PathListSeparator))
 }
 
 // getCleanEnvironment creates environment with clean PATH

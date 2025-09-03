@@ -39,18 +39,18 @@ type Interceptor struct {
 
 // New creates a new interceptor instance
 func New(socketPath string, verbose bool, h hook.Hook) *Interceptor {
-    // Note: nil hook is allowed. Interceptor will default-allow in IPC stage
-    // when no IPCHook is provided (including nil). cmdhooks.New enforces
-    // non-nil hooks for library entrypoints, but keeping this robust avoids
-    // surprising panics when interceptor is used directly in tests/tools.
-    return &Interceptor{
-        socketPath:      socketPath,
-        verbose:         verbose,
-        hook:            h,
-        stop:            make(chan struct{}),
-        exitSignal:      make(chan struct{}),
-        evaluateTimeout: 10 * time.Minute,
-    }
+	// Note: nil hook is allowed. Interceptor will default-allow in IPC stage
+	// when no IPCHook is provided (including nil). cmdhooks.New enforces
+	// non-nil hooks for library entrypoints, but keeping this robust avoids
+	// surprising panics when interceptor is used directly in tests/tools.
+	return &Interceptor{
+		socketPath:      socketPath,
+		verbose:         verbose,
+		hook:            h,
+		stop:            make(chan struct{}),
+		exitSignal:      make(chan struct{}),
+		evaluateTimeout: 10 * time.Minute,
+	}
 }
 
 // ExitSignal returns a channel that will receive a signal when exit is requested

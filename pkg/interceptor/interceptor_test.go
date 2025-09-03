@@ -396,17 +396,17 @@ func TestNew(t *testing.T) {
 		assert.NotNil(t, interceptor.exitSignal)
 	})
 
-    t.Run("with nil hook is robust (no panic)", func(t *testing.T) {
-        // Ensure no panic when creating interceptor with nil hook
-        interceptor := New("/tmp/test.sock", false, nil)
-        assert.NotNil(t, interceptor)
-        assert.Nil(t, interceptor.Hook())
-        // processRequest should default-allow
-        resp, err := interceptor.processRequest(&hook.Request{Command: []string{"echo"}, Hook: hook.HookPreRun})
-        require.NoError(t, err)
-        require.NotNil(t, resp)
-        assert.False(t, resp.Exit)
-    })
+	t.Run("with nil hook is robust (no panic)", func(t *testing.T) {
+		// Ensure no panic when creating interceptor with nil hook
+		interceptor := New("/tmp/test.sock", false, nil)
+		assert.NotNil(t, interceptor)
+		assert.Nil(t, interceptor.Hook())
+		// processRequest should default-allow
+		resp, err := interceptor.processRequest(&hook.Request{Command: []string{"echo"}, Hook: hook.HookPreRun})
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.False(t, resp.Exit)
+	})
 }
 
 func TestInterceptorStart(t *testing.T) {

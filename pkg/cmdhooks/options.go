@@ -1,7 +1,9 @@
 package cmdhooks
 
 import (
+	"fmt"
 	"github.com/codysoyland/cmdhooks/pkg/hook"
+	"strings"
 	"time"
 )
 
@@ -29,9 +31,22 @@ func WithSocketPath(path string) Option {
 	}
 }
 
-// WithWrapperPath sets the command path for wrapper generation
+// WithWrapperPath sets the command used by generated wrapper scripts.
+// Expectation: provide the binary and its subcommand/args, e.g.:
+//   - []string{"cmdhooks", "run"}
+//   - []string{"go", "run", "./cmd/cmdhooks"}
+//
+// The slice must be non-empty and contain no empty elements.
 func WithWrapperPath(wrapperPath []string) Option {
 	return func(c *Config) error {
+		if len(wrapperPath) == 0 {
+			return fmt.Errorf("WithWrapperPath: wrapper command cannot be empty; provide binary and subcommand (e.g., ['cmdhooks','run'] or ['go','run','./cmd/cmdhooks'])")
+		}
+		for i, part := range wrapperPath {
+			if strings.TrimSpace(part) == "" {
+				return fmt.Errorf("WithWrapperPath: argument %d is empty; provide non-empty command parts", i)
+			}
+		}
 		c.WrapperPath = wrapperPath
 		return nil
 	}

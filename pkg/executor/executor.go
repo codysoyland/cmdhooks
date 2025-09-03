@@ -56,6 +56,10 @@ func (s *Executor) Execute() error {
 	env := os.Environ()
 	env = s.modifyPath(env)
 	env = append(env, fmt.Sprintf("CMDHOOKS_SOCKET=%s", s.socketPath))
+	// Provide exact wrapper directory marker so wrappers can clean PATH precisely
+	if s.wrapperPath != "" {
+		env = append(env, fmt.Sprintf("CMDHOOKS_WRAPPER_DIR=%s", s.wrapperPath))
+	}
 	if s.verbose {
 		env = append(env, "CMDHOOKS_VERBOSE=true")
 	}
