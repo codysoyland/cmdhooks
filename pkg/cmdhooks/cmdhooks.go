@@ -69,6 +69,13 @@ func New(opts ...Option) (*CmdHooks, error) {
                 return nil, fmt.Errorf("failed to create temp socket directory: %w", err)
             }
         }
+        // Ensure the socket directory has restrictive permissions (0700).
+        // MkdirTemp should create it with 0700 on Unix, but explicitly enforce
+        // to normalize across OS/umask variations.
+        if chmodErr := os.Chmod(dir, 0o700); chmodErr != nil {
+            // Non-fatal: continue but surface a warning to stderr.
+            fmt.Fprintf(os.Stderr, "Warning: failed to set permissions 0700 on socket dir %s: %v\n", dir, chmodErr)
+        }
         createdSocketDir = dir
         config.SocketPath = filepath.Join(dir, "hook.sock")
     }
@@ -145,10 +152,16 @@ func (c *CmdHooks) Close() error {
 
 // createWrappers creates temporary wrapper binaries for commands specified by the hook
 func (c *CmdHooks) createWrappers() (string, func(), error) {
-	tmpDir, err := os.MkdirTemp("", "cmdhooks-wrappers-*")
-	if err != nil {
-		return "", nil, err
-	}
+    tmpDir, err := os.MkdirTemp("", "cmdhooks-wrappers-*")
+    if err != nil {
+        return "", nil, err
+    }
+
+    // Normalize wrapper directory permissions to 0700 for safety.
+    if chmodErr := os.Chmod(tmpDir, 0o700); chmodErr != nil {
+        // Non-fatal: log warning, as some filesystems/OS may behave differently.
+        fmt.Fprintf(os.Stderr, "Warning: failed to set permissions 0700 on wrapper dir %s: %v\n", tmpDir, chmodErr)
+    }
 
 	cleanup := func() {
 		// Ignore errors when cleaning up temp directory
