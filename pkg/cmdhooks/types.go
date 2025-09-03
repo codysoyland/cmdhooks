@@ -9,10 +9,14 @@ import (
 
 // CmdHooks represents the main library instance
 type CmdHooks struct {
-	config      *Config
-	interceptor *interceptor.Interceptor
-	executor    *executor.Executor
-	hook        hook.Hook
+    config      *Config
+    interceptor *interceptor.Interceptor
+    executor    *executor.Executor
+    hook        hook.Hook
+    // socketDir holds the temporary directory created to host the
+    // Unix domain socket (to keep path length short). Empty if user
+    // provided a custom SocketPath.
+    socketDir   string
 }
 
 // Config holds all configuration options

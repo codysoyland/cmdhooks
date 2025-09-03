@@ -3,13 +3,13 @@
 package cmdhooks
 
 import (
-	"fmt"
-	"log"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
-	"time"
+    "fmt"
+    "log"
+    "os"
+    "os/exec"
+    "path/filepath"
+    "strings"
+    "time"
 
 	"github.com/codysoyland/cmdhooks/pkg/executor"
 	"github.com/codysoyland/cmdhooks/pkg/hook"
@@ -57,27 +57,31 @@ func New(opts ...Option) (*CmdHooks, error) {
 	}
 
 	// Always create interceptor for consistent behavior
-	if config.SocketPath == "" {
-		// Use a unique, securely generated temp filename for the Unix socket.
-		// We create and immediately remove the file so net.Listen can bind the path.
-		f, err := os.CreateTemp("", "cmdhooks-*.sock")
-		if err != nil {
-			return nil, fmt.Errorf("failed to create temp socket path: %w", err)
-		}
-		path := f.Name()
-		_ = f.Close()
-		_ = os.Remove(path)
-		config.SocketPath = path
-	}
+    var createdSocketDir string
+    if config.SocketPath == "" {
+        // Create a short temp directory for the socket under /tmp to avoid
+        // long Unix socket paths (macOS has ~104–108 byte caps).
+        dir, err := os.MkdirTemp("/tmp", "cmdhooks-*")
+        if err != nil {
+            // Fallback to default temp dir if /tmp is unavailable.
+            dir, err = os.MkdirTemp("", "cmdhooks-*")
+            if err != nil {
+                return nil, fmt.Errorf("failed to create temp socket directory: %w", err)
+            }
+        }
+        createdSocketDir = dir
+        config.SocketPath = filepath.Join(dir, "hook.sock")
+    }
     i := interceptor.New(config.SocketPath, config.Verbose, config.Hook)
     // Apply timeout as provided; zero/negative means no timeout.
     i.SetEvaluateTimeout(config.InterceptorTimeout)
 
-	return &CmdHooks{
-		config:      config,
-		interceptor: i,
-		hook:        config.Hook,
-	}, nil
+    return &CmdHooks{
+        config:      config,
+        interceptor: i,
+        hook:        config.Hook,
+        socketDir:   createdSocketDir,
+    }, nil
 }
 
 // ExecuteScript executes a script with CmdHooks interception
@@ -115,7 +119,7 @@ func (c *CmdHooks) GetHook() hook.Hook {
 
 // Close cleans up resources
 func (c *CmdHooks) Close() error {
-	c.interceptor.Stop()
+    c.interceptor.Stop()
 
 	if c.executor != nil {
 		if err := c.executor.Cleanup(); err != nil {
@@ -125,12 +129,18 @@ func (c *CmdHooks) Close() error {
 		}
 	}
 
-	// Clean up socket file
-	if c.config.SocketPath != "" {
-		os.Remove(c.config.SocketPath)
-	}
+    // Clean up socket file
+    if c.config.SocketPath != "" {
+        os.Remove(c.config.SocketPath)
+    }
 
-	return nil
+    // Remove the socket directory if we created one
+    if c.socketDir != "" {
+        _ = os.RemoveAll(c.socketDir)
+        c.socketDir = ""
+    }
+
+    return nil
 }
 
 // createWrappers creates temporary wrapper binaries for commands specified by the hook
