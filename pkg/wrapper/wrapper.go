@@ -209,7 +209,8 @@ func (w *WrapperCommand) evaluateIPCHook(ctx context.Context, req *hook.Request,
 
 // evaluateHooks evaluates both local and IPC hooks when available
 func (w *WrapperCommand) evaluateHooks(req *hook.Request) (*hook.Response, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// No wrapper-level timeout; rely on IPC timeout in interceptor.
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// Evaluate local hook first
@@ -478,3 +479,5 @@ func runHook(socketPath string, req hook.Request) (*hook.Response, error) {
 
 	return &resp, nil
 }
+
+// (no longer needed): env-based timeout parsing removed

@@ -32,6 +32,9 @@ type Interceptor struct {
 	stop       chan struct{}
 	exitSignal chan struct{} // Channel to signal process tree termination
 	wg         sync.WaitGroup
+	// evaluateTimeout bounds hook evaluations inside the interceptor.
+	// Defaults to 10m if zero.
+	evaluateTimeout time.Duration
 }
 
 // New creates a new interceptor instance
@@ -42,11 +45,12 @@ func New(socketPath string, verbose bool, h hook.Hook) *Interceptor {
 	}
 
 	return &Interceptor{
-		socketPath: socketPath,
-		verbose:    verbose,
-		hook:       h,
-		stop:       make(chan struct{}),
-		exitSignal: make(chan struct{}),
+		socketPath:      socketPath,
+		verbose:         verbose,
+		hook:            h,
+		stop:            make(chan struct{}),
+		exitSignal:      make(chan struct{}),
+		evaluateTimeout: 10 * time.Minute,
 	}
 }
 
@@ -104,6 +108,13 @@ func (i *Interceptor) SetHook(h hook.Hook) {
 // Hook returns the current hook
 func (i *Interceptor) Hook() hook.Hook {
 	return i.hook
+}
+
+// SetEvaluateTimeout overrides the default evaluation timeout.
+func (i *Interceptor) SetEvaluateTimeout(d time.Duration) {
+	if d > 0 {
+		i.evaluateTimeout = d
+	}
 }
 
 // listen accepts and handles incoming connections
@@ -223,7 +234,11 @@ func (i *Interceptor) processRequest(req *hook.Request) (*hook.Response, error) 
 		Metadata: req.Metadata,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	timeout := i.evaluateTimeout
+	if timeout <= 0 {
+		timeout = 10 * time.Minute
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	var response *hook.Response

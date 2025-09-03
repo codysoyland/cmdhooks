@@ -2,6 +2,7 @@ package cmdhooks
 
 import (
 	"github.com/codysoyland/cmdhooks/pkg/hook"
+	"time"
 )
 
 // WithHook sets the hook for request evaluation
@@ -32,6 +33,14 @@ func WithSocketPath(path string) Option {
 func WithWrapperPath(wrapperPath []string) Option {
 	return func(c *Config) error {
 		c.WrapperPath = wrapperPath
+		return nil
+	}
+}
+
+// WithInterceptorTimeout configures the IPC evaluation timeout (e.g., 5*time.Second).
+func WithInterceptorTimeout(d time.Duration) Option {
+	return func(c *Config) error {
+		c.InterceptorTimeout = d
 		return nil
 	}
 }
