@@ -186,12 +186,21 @@ func (c *CmdHooks) createWrappers() (string, func(), error) {
 		wrapperCmd = []string{cmdHooksPath, "run"}
 	}
 
-	// Get commands from hook
-	commands := c.hook.Commands()
-	if len(commands) == 0 {
-		// If no commands specified, don't create any wrappers
-		return tmpDir, cleanup, nil
-	}
+    // Get commands from hook
+    commands := c.hook.Commands()
+    if len(commands) == 0 {
+        // If no commands specified, don't create any wrappers
+        return tmpDir, cleanup, nil
+    }
+
+    // Guard against wrapping shells that can cause recursion in wrapper shebangs.
+    // For now, explicitly reject capturing "bash" to avoid common pitfalls.
+    for _, cmd := range commands {
+        if cmd == "bash" {
+            cleanup()
+            return "", nil, fmt.Errorf("invalid monitored command 'bash': wrapping bash can cause recursive invocation; remove 'bash' from Hook.Commands or invoke only external tools")
+        }
+    }
 
 	// Create wrapper script for each command
 	for _, command := range commands {

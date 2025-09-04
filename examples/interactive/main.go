@@ -92,10 +92,10 @@ func main() {
 
 // createInteractiveHook creates an interactive hook configured for common Unix commands
 func createInteractiveHook() *InteractiveHook {
-	// Pre-configure with most common Unix commands that might need approval
-	commonCommands := []string{
-		"curl", "wget", "ssh", "git", "bash", "ls",
-	}
+    // Pre-configure with most common Unix commands that might need approval
+    commonCommands := []string{
+        "curl", "wget", "ssh", "git", "ls",
+    }
 
-	return NewInteractiveHook(commonCommands)
+    return NewInteractiveHook(commonCommands)
 }
