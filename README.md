@@ -42,6 +42,13 @@ The interactive example demonstrates the hook system:
 cd examples/interactive && ./demo.sh
 ```
 
+LocalHook-only example (no IPCHook; IPC stage default-allows):
+
+```bash
+# Local-only hook evaluation
+cd examples/localhook-only && ./demo.sh
+```
+
 ## Hook Types
 
 CmdHooks provides a flexible hook system with two evaluation modes:
