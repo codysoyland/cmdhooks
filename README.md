@@ -49,6 +49,13 @@ LocalHook-only example (no IPCHook; IPC stage default-allows):
 cd examples/localhook-only && ./demo.sh
 ```
 
+## Platform Support
+
+- Supported: Linux and macOS. Requires a POSIX shell (`bash` or compatible), Unix domain sockets, and POSIX process signals. Tested on recent Ubuntu and macOS releases.
+- Not supported: Native Windows (cmd/PowerShell). The project relies on Unix domain sockets and process group/signal semantics (`setpgid`, SIGTERM/SIGKILL) and uses Bash wrapper scripts, which are not available natively. As a workaround, run inside WSL2 with a Linux distribution.
+- Containers: Works in Linux containers provided `/bin/bash` (or a POSIX `sh`) is available and the runtime allows creating Unix domain sockets. Ensure the wrapper directory can be created in the container filesystem (typically under `/tmp`).
+- Architectures: Any architecture supported by Go where the above OS features are available (commonly `amd64` and `arm64`).
+
 ## Hook Types
 
 CmdHooks provides a flexible hook system with two evaluation modes:
